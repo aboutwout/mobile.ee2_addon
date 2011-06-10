@@ -18,32 +18,30 @@ require PATH_THIRD.'mobile/config.php';
 class Mobile_ext
 {
   public $settings            = array();
-  
+
   public $name                = BW_MOBILE_NAME;
   public $version             = BW_MOBILE_VERSION;
   public $description         = BW_MOBILE_DESCRIPTION;
   public $settings_exist      = 'n';
   public $docs_url            = '';
-			
-	private $_template_id = FALSE;		
-			
-	// -------------------------------
-	// Constructor
-	// -------------------------------
-	function Mobile_ext($settings='')
-	{
-	  $this->__construct($settings);
-	}
-	
-	function __construct($settings='')
-	{
 
+  private $_template_id = FALSE;		
+			
+  // -------------------------------
+  // Constructor
+  // -------------------------------
+  function Mobile_ext($settings='')
+  {
+    $this->__construct($settings);
+  }
+  // END Mobile_ext
+  
+  function __construct($settings='')
+  {
     $this->EE =& get_instance();
-	  
-		$this->settings = $settings;
-		
-	}
-	// END Mobile_ext
+    $this->settings = $settings;
+  }
+  // END __construct
 	
   /**
   * ...
@@ -70,19 +68,13 @@ class Mobile_ext
 	                      ->get();
 	    
 	    // No template was found, exit here
-	    if ($query->num_rows() === 0)
-	    {
-	      return;
-      }
+	    if ($query->num_rows() === 0) return;
 
 	    $mobile_group_name = 'mobile__'.$query->row('group_name');
 	    $mobile_template_name = $query->row('template_name');
 
       // No mobile template was found, exit here
-      if ( $this->_template_exists($mobile_group_name, $mobile_template_name) === FALSE)
-      {
-        return;
-      }
+      if ( $this->_template_exists($mobile_group_name, $mobile_template_name) === FALSE) return;
       
       $templates[$index] = $this->_template_id;
   	    
@@ -126,10 +118,8 @@ class Mobile_ext
       $this->_template_id = $query->row('template_id');
       return TRUE;
     }
-    else
-    {
-      return FALSE;
-    }
+
+    return FALSE;
 
   }
   // END _template_exists
@@ -138,11 +128,10 @@ class Mobile_ext
   {
     $query = $this->EE->db->where('is_site_default', 'y')->get('template_groups');
     
-    if ($query->num_rows() > 0)
-    {
-      return $query->row('group_name');
-    }
+    // If there is a default template_group, return it
+    if ($query->num_rows() > 0) return $query->row('group_name');
     
+    // There is no default template_group. GO AWAY!
     return FALSE;
   }
   // END _fetch_default_template_group
@@ -152,7 +141,7 @@ class Mobile_ext
     $agent = $_SERVER['HTTP_USER_AGENT'];
     $client = new Client();
         
-    return $client->isMobileClient($agent);
+    return $client->is_mobile_client($agent);
   }
   // END _is_mobile
 
@@ -238,19 +227,19 @@ class Client
   *  http://www.zytrax.com/tech/web/mobile_ids.html
   * @var array
   */
-  private $_mobileClients = array("midp", "240x320", "blackberry", "netfront", "nokia", "panasonic", "portalmmm", "sharp", "sie-", "sonyericsson", "symbian", "windows ce", "benq", "mda", "mot-", "opera mini", "philips", "pocket pc", "sagem", "samsung", "sda", "sgh-", "vodafone", "xda", "iphone", "android", "ipad");
+  private $_mobile_clients = array("midp", "240x320", "blackberry", "netfront", "nokia", "panasonic", "portalmmm", "sharp", "sie-", "sonyericsson", "symbian", "windows ce", "benq", "mda", "mot-", "opera mini", "philips", "pocket pc", "sagem", "samsung", "sda", "sgh-", "vodafone", "xda", "iphone", "android", "ipad");
 
   /**
   * Check if client is a mobile client
   * @param string $userAgent
   * @return boolean
   */
-  public function isMobileClient($userAgent)
+  public function is_mobile_client($agent)
   {
-    $userAgent = strtolower($userAgent);
-    foreach ($this->_mobileClients as $mobileClient)
+    $agent = strtolower($agent);
+    foreach ($this->_mobile_clients as $mobile_client)
     {
-      if (strstr($userAgent, $mobileClient))
+      if (strstr($useragent, $mobile_client))
       {
         return TRUE;
       }
