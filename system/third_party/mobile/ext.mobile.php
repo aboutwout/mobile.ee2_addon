@@ -43,10 +43,10 @@ class Mobile_ext
 		$this->settings = $settings;
 		
 	}
-	// END Bw_category_count
+	// END Mobile_ext
 	
   /**
-  * Count the categories and add the category_count variable
+  * ...
   */
   function sessions_start($SESS)
   {
@@ -104,9 +104,9 @@ class Mobile_ext
 	  }
 	  
   }
-  // END settings_form
+  // END sessions_start
 
-  function _template_exists($template_group='', $template_name='')
+  private function _template_exists($template_group='', $template_name='')
   {
     $template_group = ! $template_group ? $this->_fetch_default_template_group() : $template_group;
     $template_name = ! $template_name ? 'index' : $template_name;
@@ -132,8 +132,9 @@ class Mobile_ext
     }
 
   }
+  // END _template_exists
   
-  function _fetch_default_template_group()
+  private function _fetch_default_template_group()
   {
     $query = $this->EE->db->where('is_site_default', 'y')->get('template_groups');
     
@@ -144,14 +145,16 @@ class Mobile_ext
     
     return FALSE;
   }
+  // END _fetch_default_template_group
   
-  function _is_mobile()
+  private function _is_mobile()
   {
     $agent = $_SERVER['HTTP_USER_AGENT'];
     $client = new Client();
         
     return $client->isMobileClient($agent);
   }
+  // END _is_mobile
 
 	// --------------------------------
 	//  Activate Extension
