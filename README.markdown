@@ -6,7 +6,7 @@ Let's say you have a page you're accessing that's using EE native routing:
 
     http://devot-ee.com/add-ons/rangee
 
-This will obviously load up the 'rangee' template in the 'add-ons' template group. And that's where the magic starts: if you create a template group called 'mobile\_\_add-ons' and within that group a template named 'rangee', that template will get served up when that page is visited on a mobile device. It's that easy!
+This will obviously load up the 'rangee' template in the 'add-ons' template group. And that's where the magic starts: if you create a template group called 'mobile__add-ons' and within that group a template named 'rangee', that template will get served up when that page is visited on a mobile device. It's that easy!
 
 If no mobile equivalent of a template is found, the regular template is served up to the frontend.
 
@@ -37,12 +37,12 @@ A basic example would look something like this:
 
 The following will happen:
 
-**/**<br />Loads 'mobile\_\_homepage/index template' because mobile also honors the default template\_group setting.
+**/**<br />Loads 'mobile__homepage/index template' because mobile also honors the default template\_group setting.
 
-**/add-ons/remember-me**<br />Loads 'mobile\_\_add-ons/remember-me' because that particular template has a mobile equivalent.
+**/add-ons/remember-me**<br />Loads 'mobile__add-ons/remember-me' because that particular template has a mobile equivalent.
 
-**/add-ons/rangee**<br />Loads 'add-ons/rangee'. Even though there is a 'mobile\_\_add-ons' template group, there isn't a 'rangee' template present in that group. Therefore it just loads the regular template.
+**/add-ons/rangee**<br />Loads 'add-ons/rangee'. Even though there is a 'mobile__add-ons' template group, there isn't a 'rangee' template present in that group. Therefore it just loads the regular template.
 
-**/contact**<br />Loads 'contact/index' because there is no 'mobile\_\_contact' template group.
+**/contact**<br />Loads 'contact/index' because there is no 'mobile__contact' template group.
 
-<p style="background-color:#a00;color:#fff;padding:10px;border-radius:3px;">**Important!**<br/>Because of the lack of extension hooks during the stage where Mobile works its magic, I had to hack into the segment variables array to make this work. Because of that, when using native EE routing (not with Pages or Structure), '&#123;segment\_1&#125;' will also be prefixed with 'mobile\_\_' in the mobile templates.<br /><br />Keep that in mind.</p>
+<p style="background-color:#a00;color:#fff;padding:10px;border-radius:3px;">**Important!**<br/>Because of the lack of extension hooks during the stage where Mobile works its magic, I had to hack into the segment variables array to make this work. Because of that, when using native EE routing (not with Pages or Structure), '&#123;segment_1&#125;' will also be prefixed with 'mobile__' in the mobile templates.<br /><br />Keep that in mind.</p>
