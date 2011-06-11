@@ -227,7 +227,35 @@ class Client
   *  http://www.zytrax.com/tech/web/mobile_ids.html
   * @var array
   */
-  private $_mobile_clients = array("midp", "240x320", "blackberry", "netfront", "nokia", "panasonic", "portalmmm", "sharp", "sie-", "sonyericsson", "symbian", "windows ce", "benq", "mda", "mot-", "opera mini", "philips", "pocket pc", "sagem", "samsung", "sda", "sgh-", "vodafone", "xda", "iphone", "android", "ipad");
+  private $_mobile_clients = array(
+    "midp",
+    "240x320",
+    "blackberry",
+    "netfront",
+    "nokia",
+    "panasonic",
+    "portalmmm",
+    "sharp",
+    "sie-",
+    "sonyericsson",
+    "symbian",
+    "windows ce",
+    "benq",
+    "mda",
+    "mot-",
+    "opera mini",
+    "philips",
+    "pocket pc",
+    "sagem",
+    "samsung",
+    "sda",
+    "sgh-", 
+    "vodafone",
+    "xda", 
+    "iphone", 
+    "android", 
+    "ipad"
+  );
 
   /**
   * Check if client is a mobile client
@@ -239,7 +267,7 @@ class Client
     $agent = strtolower($agent);
     foreach ($this->_mobile_clients as $mobile_client)
     {
-      if (strstr($useragent, $mobile_client))
+      if (strstr($agent, $mobile_client))
       {
         return TRUE;
       }
