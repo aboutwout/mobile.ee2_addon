@@ -254,6 +254,7 @@ if ( ! class_exists('Client'))
       "vodafone",
       "xda", 
       "iphone", 
+      "ipod", 
       "android", 
       "ipad"
     );
