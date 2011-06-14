@@ -219,60 +219,62 @@ class Mobile_ext
 }
 // END CLASS
 
-
-class Client
+if ( ! class_exists('Client'))
 {
-  /**
-  * Available Mobile Clients
-  *  http://www.zytrax.com/tech/web/mobile_ids.html
-  * @var array
-  */
-  private $_mobile_clients = array(
-    "midp",
-    "240x320",
-    "blackberry",
-    "netfront",
-    "nokia",
-    "panasonic",
-    "portalmmm",
-    "sharp",
-    "sie-",
-    "sonyericsson",
-    "symbian",
-    "windows ce",
-    "benq",
-    "mda",
-    "mot-",
-    "opera mini",
-    "philips",
-    "pocket pc",
-    "sagem",
-    "samsung",
-    "sda",
-    "sgh-", 
-    "vodafone",
-    "xda", 
-    "iphone", 
-    "android", 
-    "ipad"
-  );
-
-  /**
-  * Check if client is a mobile client
-  * @param string $userAgent
-  * @return boolean
-  */
-  public function is_mobile_client($agent)
+  class Client
   {
-    $agent = strtolower($agent);
-    foreach ($this->_mobile_clients as $mobile_client)
+    /**
+    * Available Mobile Clients
+    *  http://www.zytrax.com/tech/web/mobile_ids.html
+    * @var array
+    */
+    private $_mobile_clients = array(
+      "midp",
+      "240x320",
+      "blackberry",
+      "netfront",
+      "nokia",
+      "panasonic",
+      "portalmmm",
+      "sharp",
+      "sie-",
+      "sonyericsson",
+      "symbian",
+      "windows ce",
+      "benq",
+      "mda",
+      "mot-",
+      "opera mini",
+      "philips",
+      "pocket pc",
+      "sagem",
+      "samsung",
+      "sda",
+      "sgh-", 
+      "vodafone",
+      "xda", 
+      "iphone", 
+      "android", 
+      "ipad"
+    );
+
+    /**
+    * Check if client is a mobile client
+    * @param string $userAgent
+    * @return boolean
+    */
+    public function is_mobile_client($agent)
     {
-      if (strstr($agent, $mobile_client))
+      $agent = strtolower($agent);
+      foreach ($this->_mobile_clients as $mobile_client)
       {
-        return TRUE;
+        if (strstr($agent, $mobile_client))
+        {
+          return TRUE;
+        }
       }
+      return FALSE;
     }
-    return FALSE;
-  }
     
+  }
 }
