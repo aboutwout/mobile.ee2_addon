@@ -49,60 +49,61 @@ class Mobile_ext
   function sessions_start($SESS)
   {
     // You're in the CP, so don't do anything
-    if ($SESS->EE->input->get('D')) return;
-    
+    if ($this->EE->input->get('D')) return;
+        
     // Not a mobile browser
     if ( ! $this->_is_mobile()) return;
     
-	  $pages = $SESS->EE->config->config['site_pages'][$SESS->EE->config->item('site_id')];
+	  $pages = $this->EE->config->config['site_pages'][$this->EE->config->item('site_id')];
 	  $templates = $pages['templates'];
 	  $uris = $pages['uris'];
+	  
+	  if (is_array($uris))
+	  {
+  	  if ($index = array_search('/'.$this->EE->uri->uri_string, $uris))
+  	  {	      	    
+  	    $query = $this->EE->db
+  	                      ->select('template_groups.group_name, templates.template_name')
+  	                      ->where('templates.template_id', $templates[$index])
+  	                      ->join('template_groups', 'templates.group_id=template_groups.group_id')
+  	                      ->from('templates')
+  	                      ->get();
 
-	  if ($index = array_search('/'.$SESS->EE->uri->uri_string, $uris))
-	  {	    
-	    $query = $this->EE->db
-	                      ->select('template_groups.group_name, templates.template_name')
-	                      ->where('templates.template_id', $templates[$index])
-	                      ->join('template_groups', 'templates.group_id=template_groups.group_id')
-	                      ->from('templates')
-	                      ->get();
-	    
-	    // No template was found, exit here
-	    if ($query->num_rows() === 0) return;
+  	    // No template was found, exit here
+  	    if ($query->num_rows() === 0) return;
 
-	    $mobile_group_name = 'mobile__'.$query->row('group_name');
-	    $mobile_template_name = $query->row('template_name');
+  	    $mobile_group_name = 'mobile__'.$query->row('group_name');
+  	    $mobile_template_name = $query->row('template_name');
 
-      // No mobile template was found, exit here
-      if ( $this->_template_exists($mobile_group_name, $mobile_template_name) === FALSE) return;
-      
-      $templates[$index] = $this->_template_id;
-  	    
-      $pages['templates'] = $templates;
-      $SESS->EE->config->config['site_pages'][$SESS->EE->config->item('site_id')] = $pages;
-      
-      return;
+        // No mobile template was found, exit here
+        if ( $this->_template_exists($mobile_group_name, $mobile_template_name) === FALSE) return;
+
+        $templates[$index] = $this->_template_id;
+
+        $pages['templates'] = $templates;
+        $this->EE->config->config['site_pages'][$this->EE->config->item('site_id')] = $pages;
+
+        return;
+  	  }	    
 	  }
 	  
-	  if (isset($SESS->EE->uri->segments[1]))
-	  {
-	    $template_group = @$SESS->EE->uri->segments[1];
-	    $template_name = @$SESS->EE->uri->segments[2];
-	    
-	    if ($this->_template_exists('mobile__'.$template_group, $template_name))
-	    {
-    	  $SESS->EE->uri->segments[1] = 'mobile__'.$SESS->EE->uri->segments[1];	    	      
-	    }
-	  }
+    $template_group = @$this->EE->uri->segments[1];
+    $template_name = @$this->EE->uri->segments[2];
+    
+    if ($this->_template_exists('mobile__'.$template_group, $template_name))
+    {
+  	  $this->EE->uri->segments[1] = $this->_mobile_template_group;
+    }
 	  
   }
   // END sessions_start
 
   private function _template_exists($template_group='', $template_name='')
-  {
-    $template_group = ! $template_group ? $this->_fetch_default_template_group() : $template_group;
-    $template_name = ! $template_name ? 'index' : $template_name;
+  { 
     
+    $template_group = ($template_group == 'mobile__') ? 'mobile__'.$this->_fetch_default_template_group() : $template_group;
+    $template_name = ! $template_name ? 'index' : $template_name;
+        
     if ( ! $template_group) return FALSE;
     
     $query = $this->EE->db
@@ -116,6 +117,7 @@ class Mobile_ext
     if ($query->num_rows() === 1)
     {
       $this->_template_id = $query->row('template_id');
+      $this->_mobile_template_group = $template_group;
       return TRUE;
     }
 
