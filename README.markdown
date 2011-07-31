@@ -45,4 +45,18 @@ The following will happen:
 
 **/contact**<br />Loads 'contact/index' because there is no 'mobile__contact' template group.
 
+## Global Variables
+
+As of version 0.7 you have access to two global variables:
+
+* is_mobile
+* mobile_client
+
+Both of which are pretty much self-explanatory.
+
+## Settings
+
+As of version 0.7 you can define a template_group prefix for each mobile client. Setting a prefix for each mobile client might be a bit much, but you might want to make a difference between mobile devices and tablets like the iPad.
+
+
 <p style="background-color:#a00;color:#fff;padding:10px;border-radius:3px;">**Important!**<br/>Because of the lack of extension hooks during the stage where Mobile works its magic, I had to hack into the segment variables array to make this work. Because of that, when using native EE routing (not with Pages or Structure), '&#123;segment_1&#125;' will also be prefixed with 'mobile__' in the mobile templates.<br /><br />Keep that in mind.</p>
