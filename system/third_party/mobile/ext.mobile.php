@@ -22,10 +22,12 @@ class Mobile_ext
   public $name                = BW_MOBILE_NAME;
   public $version             = BW_MOBILE_VERSION;
   public $description         = BW_MOBILE_DESCRIPTION;
-  public $settings_exist      = 'n';
+  public $settings_exist      = 'y';
   public $docs_url            = '';
 
   private $_template_id = FALSE;		
+
+  private $_prefix = 'mobile';
 			
   // -------------------------------
   // Constructor
@@ -40,6 +42,9 @@ class Mobile_ext
   {
     $this->EE =& get_instance();
     $this->settings = $settings;
+    
+    $this->site_id = $this->EE->config->item('site_id');
+    
   }
   // END __construct
 	
@@ -49,7 +54,7 @@ class Mobile_ext
   function sessions_start($SESS)
   {
     // You're in the CP, so don't do anything
-    if ($this->EE->input->get('D')) return;
+    if (defined('REQ') AND REQ == 'CP') return;
         
     // Not a mobile browser
     if ( ! $this->_is_mobile()) return;
@@ -72,7 +77,7 @@ class Mobile_ext
   	    // No template was found, exit here
   	    if ($query->num_rows() === 0) return;
 
-  	    $mobile_group_name = 'mobile__'.$query->row('group_name');
+  	    $mobile_group_name = $this->_prefix.'__'.$query->row('group_name');
   	    $mobile_template_name = $query->row('template_name');
 
         // No mobile template was found, exit here
@@ -90,18 +95,48 @@ class Mobile_ext
     $template_group = @$this->EE->uri->segments[1];
     $template_name = @$this->EE->uri->segments[2];
     
-    if ($this->_template_exists('mobile__'.$template_group, $template_name))
+    if ($this->_template_exists($this->_prefix.'__'.$template_group, $template_name))
     {
   	  $this->EE->uri->segments[1] = $this->_mobile_template_group;
     }
 	  
   }
   // END sessions_start
+/*  
+  function settings_form($current='')
+  {
+    $vars = array();
+    $vars['hidden'] = array();
+    $vars['fields'] = $this->settings();
+
+    return $this->EE->load->view('extension_settings', $vars, true);
+  }
+*/
+  function settings()
+  {
+    $this->EE->load->add_package_path(PATH_THIRD.strtolower(BW_MOBILE_NAME).'/');
+    $this->EE->load->library('client');
+    $settings = array();
+
+    foreach ($this->EE->client->mobile_clients as $mb)
+    {
+      $prepped_client = $this->_prep_client_string($mb);
+      $val = isset($this->settings[$prepped_client]) ? $this->settings[$prepped_client] : 'mobile';
+      $settings[$prepped_client] = array('i', '', $val);
+    }      
+    
+    return $settings;
+  }
+
+  private function _prep_client_string($str='')
+  {
+    return strtolower(str_replace(' ', '_', $str));
+  }
 
   private function _template_exists($template_group='', $template_name='')
   { 
     
-    $template_group = ($template_group == 'mobile__') ? 'mobile__'.$this->_fetch_default_template_group() : $template_group;
+    $template_group = ($template_group == $this->_prefix.'__') ? $this->_prefix.'__'.$this->_fetch_default_template_group() : $template_group;
     $template_name = ! $template_name ? 'index' : $template_name;
         
     if ( ! $template_group) return FALSE;
@@ -141,9 +176,21 @@ class Mobile_ext
   private function _is_mobile()
   {
     $agent = $_SERVER['HTTP_USER_AGENT'];
-    $client = new Client();
-        
-    return $client->is_mobile_client($agent);
+    
+    $this->EE->load->library('client');
+    
+    $is_mobile = $this->EE->client->is_mobile($agent);
+    
+    if ($is_mobile)
+    {
+      $this->_prefix = $this->settings[$this->EE->client->mobile_client];
+      $this->EE->config->_global_vars['is_mobile'] = TRUE;
+      $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
+      return TRUE;
+    }
+    
+    return FALSE;
+    
   }
   // END _is_mobile
 
@@ -220,64 +267,3 @@ class Mobile_ext
 	 
 }
 // END CLASS
-
-if ( ! class_exists('Client'))
-{
-  class Client
-  {
-    /**
-    * Available Mobile Clients
-    *  http://www.zytrax.com/tech/web/mobile_ids.html
-    * @var array
-    */
-    private $_mobile_clients = array(
-      "midp",
-      "240x320",
-      "blackberry",
-      "netfront",
-      "nokia",
-      "panasonic",
-      "portalmmm",
-      "sharp",
-      "sie-",
-      "sonyericsson",
-      "symbian",
-      "windows ce",
-      "benq",
-      "mda",
-      "mot-",
-      "opera mini",
-      "philips",
-      "pocket pc",
-      "sagem",
-      "samsung",
-      "sda",
-      "sgh-", 
-      "vodafone",
-      "xda", 
-      "iphone", 
-      "ipod", 
-      "android", 
-      "ipad"
-    );
-
-    /**
-    * Check if client is a mobile client
-    * @param string $userAgent
-    * @return boolean
-    */
-    public function is_mobile_client($agent)
-    {
-      $agent = strtolower($agent);
-      foreach ($this->_mobile_clients as $mobile_client)
-      {
-        if (strstr($agent, $mobile_client))
-        {
-          return TRUE;
-        }
-      }
-      return FALSE;
-    }
-    
-  }
-}
