@@ -47,12 +47,23 @@ The following will happen:
 
 ## Global Variables
 
-As of version 0.7 you have access to two global variables:
+* `{is_mobile}`
+* `{mobile_client}`
 
-* is_mobile
-* mobile_client
+These are pretty much self-explanatory.
 
-Both of which are pretty much self-explanatory.
+As of version 0.8 there are two extra global variables:
+
+* `{mobile:switch_to_full}`
+* `{mobile:switch_to_mobile}`
+
+These two tags output a link that allows you to switch the mobile check on or off.
+
+They are used like this:
+
+    Switch to:
+    <a href="{mobile:switch_to_full}">Full</a> | <a href="{mobile:switch_to_mobile}">Mobile</a>
+
 
 ## Settings
 
