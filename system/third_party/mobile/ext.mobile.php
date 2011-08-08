@@ -28,6 +28,10 @@ class Mobile_ext
   private $_template_id = FALSE;		
 
   private $_prefix = 'mobile';
+  
+  private $_mobile_check = TRUE;
+  
+  private $_cookie_timeout = 2678400; // 1 month
 			
   // -------------------------------
   // Constructor
@@ -45,6 +49,8 @@ class Mobile_ext
     
     $this->site_id = $this->EE->config->item('site_id');
     
+   $this->_mobile_check = ($this->EE->input->cookie(strtolower(__CLASS__).'_on') === 'no') ? FALSE : TRUE;
+       
   }
   // END __construct
 	
@@ -56,9 +62,35 @@ class Mobile_ext
     // You're in the CP, so don't do anything
     if (defined('REQ') AND REQ == 'CP') return;
         
+    $this->EE->session = $SESS;
+    
+    // If the URL contains 'MOBILE_ACT' execute this code and redirect afterwards
+    if (isset($_REQUEST['MOBILE_ACT']) AND in_array($_REQUEST['MOBILE_ACT'], array('STF', 'STM')))
+    {
+      switch($_REQUEST['MOBILE_ACT'])
+      {
+        case 'STF':
+          $this->_switch_to_full();
+          break;
+        case 'STM':
+          $this->_switch_to_mobile();
+          break;
+      }      
+      $this->EE->functions->redirect($_SERVER['HTTP_REFERER']);
+    }
+    
+    $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
+    $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
+
+    if ($this->_mobile_check === FALSE) {
+      $this->EE->config->_global_vars['is_mobile'] = FALSE;
+      $this->EE->config->_global_vars['mobile_client'] = '';
+      return;
+    }
+    
     // Not a mobile browser
     if ( ! $this->_is_mobile()) return;
-    
+
 	  $pages = $this->EE->config->config['site_pages'][$this->EE->config->item('site_id')];
 	  $templates = $pages['templates'];
 	  $uris = $pages['uris'];
@@ -91,6 +123,7 @@ class Mobile_ext
         return;
   	  }	    
 	  }
+
 	  
     $template_group = @$this->EE->uri->segments[1];
     $template_name = @$this->EE->uri->segments[2];
@@ -102,16 +135,8 @@ class Mobile_ext
 	  
   }
   // END sessions_start
-/*  
-  function settings_form($current='')
-  {
-    $vars = array();
-    $vars['hidden'] = array();
-    $vars['fields'] = $this->settings();
 
-    return $this->EE->load->view('extension_settings', $vars, true);
-  }
-*/
+
   function settings()
   {
     $this->EE->load->add_package_path(PATH_THIRD.strtolower(BW_MOBILE_NAME).'/');
@@ -173,23 +198,31 @@ class Mobile_ext
   }
   // END _fetch_default_template_group
   
+  private function _switch_to_full()
+  {
+    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'no', $this->_cookie_timeout);
+  }
+  
+  private function _switch_to_mobile()
+  {
+    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'yes', $this->_cookie_timeout);
+  }
+  
   private function _is_mobile()
   {
+    
     $agent = $_SERVER['HTTP_USER_AGENT'];
     
     $this->EE->load->library('client');
     
     $is_mobile = $this->EE->client->is_mobile($agent);
+
+    $this->_prefix = isset($this->settings[$this->EE->client->mobile_client]) ? $this->settings[$this->EE->client->mobile_client] : '';
     
-    if ($is_mobile)
-    {
-      $this->_prefix = $this->settings[$this->EE->client->mobile_client];
-      $this->EE->config->_global_vars['is_mobile'] = TRUE;
-      $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
-      return TRUE;
-    }
+    $this->EE->config->_global_vars['is_mobile'] = $is_mobile;
+    $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
     
-    return FALSE;
+    return $is_mobile;
     
   }
   // END _is_mobile
