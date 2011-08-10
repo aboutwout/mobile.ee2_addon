@@ -9,6 +9,7 @@ class Client
   */
   public $mobile_clients = array(        
     'android',
+    'blackberry',
     'iphone',
     'ipod',
     'ipad',
