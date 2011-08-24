@@ -226,6 +226,20 @@ class Mobile_ext
     
   }
   // END _is_mobile
+  
+  function _get_default_settings() {
+    $this->EE->load->add_package_path(PATH_THIRD.strtolower(BW_MOBILE_NAME).'/');
+    $this->EE->load->library('client');
+    $settings = array();
+
+    foreach ($this->EE->client->mobile_clients as $mb)
+    {
+      $prepped_client = $this->_prep_client_string($mb);
+      $settings[$prepped_client] = 'mobile';
+    }
+    
+    return $settings;  
+  }
 
 	// --------------------------------
 	//  Activate Extension
@@ -249,7 +263,7 @@ class Mobile_ext
         'priority'	=> 1,
         'version'	=> $this->version,
         'enabled'	=> 'y',
-        'settings'	=> ''
+        'settings'	=> serialize($this->_get_default_settings())
       );
 
       // insert in database
@@ -267,18 +281,30 @@ class Mobile_ext
 	function update_extension($current='')
 	{
 		
+		$settings = array();
+				
     if ($current == '' OR $current == $this->version)
     {
       return FALSE;
     }
     
-    if($current < $this->version) { }
+    if ($current < $this->version) {
+      
+      $this->EE->db->where('class', get_class($this));      
+      $settings = unserialize($this->EE->db->get('extensions')->row('settings'));
+      
+      if ( ! $settings || ! is_array($settings))
+      {
+        $settings = $this->_get_default_settings();
+      }
+      
+    }
 
     // init data array
-    $data = array();
-
-    // Add version to data array
-    $data['version'] = $this->version;    
+    $data = array(
+      'settings' => serialize($settings),
+      'version' => $this->version
+    );
 
     // Update records using data array
     $this->EE->db->where('class', get_class($this));
