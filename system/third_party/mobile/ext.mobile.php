@@ -49,7 +49,7 @@ class Mobile_ext
     
     $this->site_id = $this->EE->config->item('site_id');
     
-   $this->_mobile_check = ($this->EE->input->cookie(strtolower(__CLASS__).'_on') === 'no') ? FALSE : TRUE;
+    $this->_mobile_check = ($this->EE->input->cookie(strtolower(__CLASS__).'_on') === 'no') ? FALSE : TRUE;
        
   }
   // END __construct
@@ -81,15 +81,14 @@ class Mobile_ext
     
     $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
     $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
-
-    if ($this->_mobile_check === FALSE) {
-      $this->EE->config->_global_vars['is_mobile'] = FALSE;
-      $this->EE->config->_global_vars['mobile_client'] = '';
-      return;
-    }
     
-    // Not a mobile browser
-    if ( ! $this->_is_mobile()) return;
+    
+    // Check for mobile and set global vars
+    $this->_is_mobile();
+    
+
+    // Mobile redirect is disabled
+    if ($this->_mobile_check === FALSE) return;
 
 	  $pages = $this->EE->config->config['site_pages'][$this->EE->config->item('site_id')];
 	  $templates = $pages['templates'];
@@ -97,6 +96,7 @@ class Mobile_ext
 	  
 	  if (is_array($uris))
 	  {
+  	  
   	  if ($index = array_search('/'.$this->EE->uri->uri_string, $uris))
   	  {	      	    
   	    $query = $this->EE->db
@@ -127,9 +127,9 @@ class Mobile_ext
 	  
     $template_group = @$this->EE->uri->segments[1];
     $template_name = @$this->EE->uri->segments[2];
-    
+            
     if ($this->_template_exists($this->_prefix.'__'.$template_group, $template_name))
-    {
+    {      
   	  $this->EE->uri->segments[1] = $this->_mobile_template_group;
     }
 	  
@@ -220,6 +220,7 @@ class Mobile_ext
     $this->_prefix = isset($this->settings[$this->EE->client->mobile_client]) ? $this->settings[$this->EE->client->mobile_client] : '';
     
     $this->EE->config->_global_vars['is_mobile'] = $is_mobile;
+    $this->EE->config->_global_vars['is_desktop'] = ! $is_mobile;
     $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
     
     return $is_mobile;
