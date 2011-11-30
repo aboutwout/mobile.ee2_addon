@@ -96,8 +96,7 @@ class Mobile_ext
 	  
 	  if (is_array($uris))
 	  {
-  	  
-  	  if ($index = array_search('/'.$this->EE->uri->uri_string, $uris))
+  	  if ($index = array_search('/'.$this->EE->uri->uri_string, $uris) OR $index = array_search('/'.$this->EE->uri->uri_string.'/', $uris))
   	  {	      	    
   	    $query = $this->EE->db
   	                      ->select('template_groups.group_name, templates.template_name')

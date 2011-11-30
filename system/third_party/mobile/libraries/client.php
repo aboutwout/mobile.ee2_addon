@@ -7,7 +7,7 @@ class Client
   *  http://www.zytrax.com/tech/web/mobile_ids.html
   * @var array
   */
-  public $mobile_clients = array(        
+  public $mobile_clients = array(  
     'android',
     'blackberry',
     'iphone',
