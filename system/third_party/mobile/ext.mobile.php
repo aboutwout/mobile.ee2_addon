@@ -145,7 +145,7 @@ class Mobile_ext
     foreach ($this->EE->client->mobile_clients as $mb)
     {
       $prepped_client = $this->_prep_client_string($mb);
-      $val = isset($this->settings[$prepped_client]) ? $this->settings[$prepped_client] : 'mobile';
+      $val = isset($this->settings[$prepped_client]) ? $this->settings[$prepped_client] : '';
       $settings[$prepped_client] = array('i', '', $val);
     }      
     
