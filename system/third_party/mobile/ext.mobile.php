@@ -260,7 +260,7 @@ class Mobile_ext
         'class'		=> get_class($this),
         'method'	=> $method,
         'hook'		=> $hook,
-        'priority'	=> 1,
+        'priority'	=> 10,
         'version'	=> $this->version,
         'enabled'	=> 'y',
         'settings'	=> serialize($this->_get_default_settings())
