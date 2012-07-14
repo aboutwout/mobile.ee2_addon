@@ -135,6 +135,7 @@ class Mobile_ext
     if ($this->_template_exists($this->_prefix.'__'.$template_group, $template_name))
     {      
   	  $this->EE->uri->segments[1] = $this->_mobile_template_group;
+  	  $this->EE->uri->segments[2] = $template_name;
     }
 	  
   }
@@ -164,8 +165,25 @@ class Mobile_ext
   
   private function _check_template($template_group='', $template_name='')
   {
-    
     $template_group = ( ! $template_group) ? $this->_fetch_default_template_group() : $template_group;
+    
+    if ( ! $template_name)
+    {
+      $default = $this->EE->db
+        ->select('template_groups.group_name AS template_group')
+        ->select('templates.template_name AS template_name')
+        ->where('template_groups.is_site_default', 'y')
+        ->where('templates.template_name', $template_group)
+        ->join('template_groups', 'templates.group_id=template_groups.group_id')
+        ->from('templates')
+        ->get();
+        
+      if ($default->num_rows() > 0)
+      {
+        return array($default->row('template_group'), $default->row('template_name'));
+      }
+    }
+    
     $template_name = ( ! $template_name) ? 'index' : $template_name;
     
     $query = $this->EE->db
