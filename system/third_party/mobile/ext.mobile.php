@@ -173,6 +173,7 @@ class Mobile_ext
         ->select('template_groups.group_name AS template_group')
         ->select('templates.template_name AS template_name')
         ->where('template_groups.is_site_default', 'y')
+        ->where('template_groups.site_id', $this->EE->config->item('site_id'))
         ->where('templates.template_name', $template_group)
         ->join('template_groups', 'templates.group_id=template_groups.group_id')
         ->from('templates')
@@ -187,12 +188,13 @@ class Mobile_ext
     $template_name = ( ! $template_name) ? 'index' : $template_name;
     
     $query = $this->EE->db
-                         ->select('template_id')
-                         ->where('template_groups.group_name', $template_group)
-                         ->where('templates.template_name', $template_name)
- 	                      ->join('template_groups', 'templates.group_id=template_groups.group_id')
- 	                      ->from('templates')
- 	                      ->get();
+      ->select('template_id')
+      ->where('template_groups.group_name', $template_group)
+      ->where('templates.template_name', $template_name)
+      ->where('template_groups.site_id', $this->EE->config->item('site_id'))
+      ->join('template_groups', 'templates.group_id=template_groups.group_id')
+      ->from('templates')
+      ->get();
     
     if ($query->num_rows() == 0)
     {
