@@ -165,60 +165,65 @@ class Mobile_ext
   
   private function _check_template($template_group='', $template_name='')
   {
-    $template_group = ( ! $template_group) ? $this->_fetch_default_template_group() : $template_group;
+    $site_id = $this->EE->config->item('site_id');
+    $default_group = $this->_fetch_default_template_group();
+    $template_name = $template_name ? $template_name : 'index';
     
-    if ( ! $template_name)
+    $ors = array();
+
+    if ($template_group)
     {
-      $default = $this->EE->db
-        ->select('template_groups.group_name AS template_group')
-        ->select('templates.template_name AS template_name')
-        ->where('template_groups.is_site_default', 'y')
-        ->where('template_groups.site_id', $this->EE->config->item('site_id'))
-        ->where('templates.template_name', $template_group)
-        ->join('template_groups', 'templates.group_id=template_groups.group_id')
-        ->from('templates')
-        ->get();
-        
-      if ($default->num_rows() > 0)
+      $ors[] = "(tg.group_name='$template_group' AND t.template_name='$template_name')";
+      $ors[] = "(tg.group_name='$default_group' AND t.template_name='$template_group')";
+    }
+    else
+    {
+      $ors[] = "(tg.group_name='$default_group' AND t.template_name='index')";
+    }
+    
+    $sql = "SELECT tg.group_name AS template_group, t.template_name AS template_name FROM exp_templates t LEFT JOIN exp_template_groups tg ON t.group_id=tg.group_id WHERE tg.site_id='$site_id'";
+    
+    if (count($ors) > 0)
+    {
+      $sql .= " AND (".implode(' OR ', $ors).")";      
+    }
+    
+    $query = $this->EE->db->query($sql);
+
+    if ($query->num_rows() > 0)
+    {
+      return array($query->row('template_group'), $query->row('template_name'));      
+    }
+
+    if ($template_group)
+    {
+      $sql_fallback = "SELECT tg.group_name AS template_group, t.template_name AS template_name FROM exp_templates t LEFT JOIN exp_template_groups tg ON t.group_id=tg.group_id WHERE tg.site_id='$site_id' AND (tg.group_name='$template_group' AND t.template_name='index')";
+      
+      $query_fallback = $this->EE->db->query($sql_fallback);
+            
+      if ($query_fallback->num_rows() > 0)
       {
-        return array($default->row('template_group'), $default->row('template_name'));
+        return array($query_fallback->row('template_group'), $query_fallback->row('template_name'));      
       }
     }
     
-    $template_name = ( ! $template_name) ? 'index' : $template_name;
+    return array($default_group, 'index');
+  }
+
+  private function _template_exists($template_group='', $template_name='')
+  { 
+    // $template_group = ($template_group == $this->_prefix.'__') ? $this->_prefix.'__'.$this->_fetch_default_template_group() : $template_group;
+    // $template_name = ! $template_name ? 'index' : $template_name;
+        
+    if ( ! $template_group) return FALSE;
     
     $query = $this->EE->db
       ->select('template_id')
       ->where('template_groups.group_name', $template_group)
       ->where('templates.template_name', $template_name)
-      ->where('template_groups.site_id', $this->EE->config->item('site_id'))
-      ->join('template_groups', 'templates.group_id=template_groups.group_id')
-      ->from('templates')
-      ->get();
-    
-    if ($query->num_rows() == 0)
-    {
-      $template_name = 'index';      
-    }
-    
-    return array($template_group, $template_name);
-  }
-
-  private function _template_exists($template_group='', $template_name='')
-  { 
-    
-    $template_group = ($template_group == $this->_prefix.'__') ? $this->_prefix.'__'.$this->_fetch_default_template_group() : $template_group;
-    $template_name = ! $template_name ? 'index' : $template_name;
-        
-    if ( ! $template_group) return FALSE;
-    
-    $query = $this->EE->db
-                         ->select('template_id')
-                         ->where('template_groups.group_name', $template_group)
-                         ->where('templates.template_name', $template_name)
- 	                      ->join('template_groups', 'templates.group_id=template_groups.group_id')
- 	                      ->from('templates')
- 	                      ->get();
+ 	    ->join('template_groups', 'templates.group_id=template_groups.group_id')
+ 	    ->from('templates')
+ 	    ->get();
 
     if ($query->num_rows() === 1)
     {
