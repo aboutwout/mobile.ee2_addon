@@ -90,7 +90,7 @@ class Mobile_ext
     // Mobile redirect is disabled
     if ($this->_mobile_check === FALSE) return;
 
-	  $pages = $this->EE->config->config['site_pages'][$this->EE->config->item('site_id')];
+	  $pages = $this->EE->config->config['site_pages'][$this->site_id];
 	  $templates = $pages['templates'];
 	  $uris = $pages['uris'];
 	  
@@ -117,7 +117,7 @@ class Mobile_ext
         $templates[$index] = $this->_template_id;
 
         $pages['templates'] = $templates;
-        $this->EE->config->config['site_pages'][$this->EE->config->item('site_id')] = $pages;
+        $this->EE->config->config['site_pages'][$this->site_id] = $pages;
 
         return;
   	  }	    
@@ -165,7 +165,7 @@ class Mobile_ext
   
   private function _check_template($template_group='', $template_name='')
   {
-    $site_id = $this->EE->config->item('site_id');
+    $site_id = $this->site_id;
     $default_group = $this->_fetch_default_template_group();
     $template_name = $template_name ? $template_name : 'index';
     
@@ -219,9 +219,10 @@ class Mobile_ext
     
     $query = $this->EE->db
       ->select('template_id')
+ 	    ->join('template_groups', 'templates.group_id=template_groups.group_id')
       ->where('template_groups.group_name', $template_group)
       ->where('templates.template_name', $template_name)
- 	    ->join('template_groups', 'templates.group_id=template_groups.group_id')
+ 	    ->where('template_groups.site_id', $this->site_id)
  	    ->from('templates')
  	    ->get();
 
@@ -239,7 +240,10 @@ class Mobile_ext
   
   private function _fetch_default_template_group()
   {
-    $query = $this->EE->db->where('is_site_default', 'y')->get('template_groups');
+    $query = $this->EE->db
+      ->where('is_site_default', 'y')
+      ->where('site_id', $this->site_id)
+      ->get('template_groups');
     
     // If there is a default template_group, return it
     if ($query->num_rows() > 0) return $query->row('group_name');
