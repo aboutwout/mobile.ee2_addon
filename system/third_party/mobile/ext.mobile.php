@@ -50,6 +50,7 @@ class Mobile_ext
     $this->site_id = $this->EE->config->item('site_id');
     
     $this->_mobile_check = ($this->EE->input->cookie(strtolower(__CLASS__).'_on') === 'no') ? FALSE : TRUE;
+    $this->_mobile_forced = ($this->EE->input->cookie(strtolower(__CLASS__).'_forced') === 'yes') ? TRUE : FALSE;
        
   }
   // END __construct
@@ -81,10 +82,14 @@ class Mobile_ext
     
     $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
     $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
+    $this->EE->config->_global_vars['mobile:switch_to_mobile:force'] = $this->EE->functions->create_url('?MOBILE_ACT=STM&force=1');
     
     
-    // Check for mobile and set global vars
-    $this->_is_mobile();
+    if ( ! $this->_mobile_forced)
+    {
+      // Check for mobile and set global vars
+      $this->_is_mobile();
+    }
     
 
     // Mobile redirect is disabled
@@ -256,11 +261,17 @@ class Mobile_ext
   private function _switch_to_full()
   {
     $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'no', $this->_cookie_timeout);
+    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_forced', '', '');
   }
   
   private function _switch_to_mobile()
   {
     $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'yes', $this->_cookie_timeout);
+    
+    if ($this->EE->input->get('force') == 1)
+    {
+      $this->EE->functions->set_cookie(strtolower(__CLASS__).'_forced', 'yes', $this->_cookie_timeout);
+    }
   }
   
   private function _is_mobile()
