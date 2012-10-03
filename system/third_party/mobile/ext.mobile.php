@@ -49,6 +49,13 @@ class Mobile_ext
     
     $this->site_id = $this->EE->config->item('site_id');
     
+    $segs = $this->EE->uri->segments;
+    
+    foreach (range(1, 10) as $n)
+    {
+      $this->EE->config->_global_vars['mobile_'.$n] = isset($segs[$n]) ? $segs[$n] : '';
+    }
+    
     $this->_mobile_check = ($this->EE->input->cookie(strtolower(__CLASS__).'_on') === 'no') ? FALSE : TRUE;
     $this->_mobile_forced = ($this->EE->input->cookie(strtolower(__CLASS__).'_forced') === 'yes') ? TRUE : FALSE;
        
