@@ -143,13 +143,26 @@ class Mobile_ext
     {
       list($template_group, $template_name) = $check;
     }
-            
+                
     if ($this->_template_exists($this->_prefix.'__'.$template_group, $template_name))
     {      
-  	  $this->EE->uri->segments[1] = $this->_mobile_template_group;
-  	  $this->EE->uri->segments[2] = $template_name;
+  	  if (isset($this->EE->uri->segments[1]) AND $template_name === $this->EE->uri->segments[1])
+  	  {
+  	    $segs = $this->EE->uri->segments;
+  	    array_unshift($this->EE->uri->segments, $this->_mobile_template_group);
+  	    foreach ($this->EE->uri->segments as $seg_num => $seg)
+  	    {
+  	      $segs[$seg_num+1] = $seg;
+  	    }
+  	    $this->EE->uri->segments = $segs;
+  	  }
+  	  else
+  	  {
+  	    $this->EE->uri->segments[1] = $this->_mobile_template_group;
+    	  $this->EE->uri->segments[2] = $template_name;
+  	  }
     }
-	  
+    
   }
   // END sessions_start
 
