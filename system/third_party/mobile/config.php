@@ -2,8 +2,8 @@
 
 if (! defined('BW_MOBILE_VERSION'))
 {
-  define('BW_MOBILE_VERSION', '0.9.6.4');
-  define('BW_MOBILE_NAME', 'Mobile');
+  define('BW_MOBILE_VERSION', '1.0.0');
+  define('BW_MOBILE_NAME', 'Mobile (for v2.4.0+)');
   define('BW_MOBILE_DESCRIPTION', 'Serve up a different template if the site is visited from a mobile device.');
 }
 
