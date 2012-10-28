@@ -56,20 +56,27 @@ class Mobile_ext
       $this->EE->config->_global_vars['mobile_'.$n] = isset($segs[$n]) ? $segs[$n] : '';
     }
     
-    $this->_mobile_check = ($this->EE->input->cookie(strtolower(__CLASS__).'_on') === 'no') ? FALSE : TRUE;
-    $this->_mobile_forced = ($this->EE->input->cookie(strtolower(__CLASS__).'_forced') === 'yes') ? TRUE : FALSE;
+    $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
+    $this->_mobile_forced = ($this->EE->input->cookie('mobile_forced') === 'yes') ? TRUE : FALSE;
        
   }
   // END __construct
   
   public function core_template_route($current_uri=NULL)
   {
-    if ( ! $this->_mobile_forced)
+    if ($this->_mobile_forced)
+    {
+      $this->_is_mobile();
+      $this->_prefix = 'mobile';
+      $this->_mobile_check = TRUE;
+    }
+    else
     {
       // Check for mobile and set global vars
-      $this->_is_mobile();
+      $this->_is_mobile(FALSE);
+      
     }
-    
+
     if (is_null($current_uri) OR ! $this->_mobile_check)
     {
       return;
@@ -93,9 +100,9 @@ class Mobile_ext
     $this->EE->session = $SESS;
     
     // If the URL contains 'MOBILE_ACT' execute this code and redirect afterwards
-    if (isset($_REQUEST['MOBILE_ACT']) AND in_array($_REQUEST['MOBILE_ACT'], array('STF', 'STM')))
+    if (isset($_GET['MOBILE_ACT']) AND in_array($_GET['MOBILE_ACT'], array('STF', 'STM')))
     {
-      switch($_REQUEST['MOBILE_ACT'])
+      switch($_GET['MOBILE_ACT'])
       {
         case 'STF':
           $this->_switch_to_full();
@@ -117,8 +124,9 @@ class Mobile_ext
 
   function settings()
   {
-    $this->EE->load->add_package_path(PATH_THIRD.strtolower(get_class($this)).'/');
+    $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
     $this->EE->load->library('client');
+    
     $settings = array();
 
     foreach ($this->EE->client->mobile_clients as $mb)
@@ -400,21 +408,21 @@ class Mobile_ext
   
   private function _switch_to_full()
   {
-    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'no', $this->_cookie_timeout);
-    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_forced', '', '');
+    $this->EE->functions->set_cookie('mobile_on', 'no', $this->_cookie_timeout);
+    $this->EE->functions->set_cookie('mobile_forced', '', '');
   }
   
   private function _switch_to_mobile()
   {
-    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'yes', $this->_cookie_timeout);
+    $this->EE->functions->set_cookie('mobile_on', 'yes', $this->_cookie_timeout);
     
     if ($this->EE->input->get('force') == 1)
     {
-      $this->EE->functions->set_cookie(strtolower(__CLASS__).'_forced', 'yes', $this->_cookie_timeout);
+      $this->EE->functions->set_cookie('mobile_forced', 'yes', $this->_cookie_timeout);
     }
   }
   
-  private function _is_mobile()
+  private function _is_mobile($is_on=TRUE)
   {
     
     $agent = $_SERVER['HTTP_USER_AGENT'];
@@ -423,11 +431,16 @@ class Mobile_ext
     
     $is_mobile = $this->EE->client->is_mobile($agent);
 
-    $this->_prefix = isset($this->settings[$this->EE->client->mobile_client]) ? $this->settings[$this->EE->client->mobile_client] : '';
+    $this->_prefix = isset($this->settings[$this->EE->client->mobile_client]) ? $this->settings[$this->EE->client->mobile_client] : '';      
     
     $this->EE->config->_global_vars['is_mobile'] = $is_mobile;
     $this->EE->config->_global_vars['is_desktop'] = ! $is_mobile;
     $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
+    
+    if ($is_on === FALSE)
+    {
+      $this->_mobile_check = FALSE;
+    }
     
     return $is_mobile;
     
