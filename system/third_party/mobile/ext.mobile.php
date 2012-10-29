@@ -58,24 +58,11 @@ class Mobile_ext
     
     $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
     $this->_mobile_forced = ($this->EE->input->cookie('mobile_forced') === 'yes') ? TRUE : FALSE;
-       
   }
   // END __construct
   
   public function core_template_route($current_uri=NULL)
   {
-    if ($this->_mobile_forced)
-    {
-      $this->_is_mobile();
-      $this->_prefix = 'mobile';
-      $this->_mobile_check = TRUE;
-    }
-    else
-    {
-      // Check for mobile and set global vars
-      $this->_is_mobile(FALSE);
-      
-    }
 
     if (is_null($current_uri) OR ! $this->_mobile_check)
     {
@@ -114,6 +101,18 @@ class Mobile_ext
       $this->EE->functions->redirect($_SERVER['HTTP_REFERER']);
     }
     
+    if ($this->_mobile_forced)
+    {
+      $this->_is_mobile();
+      $this->_prefix = 'mobile';
+      $this->_mobile_check = TRUE;
+    }
+    else
+    {
+      // Check for mobile and set global vars
+      $this->_is_mobile(FALSE);
+    }
+        
     $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
     $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
     $this->EE->config->_global_vars['mobile:switch_to_mobile:force'] = $this->EE->functions->create_url('?MOBILE_ACT=STM&force=1');
