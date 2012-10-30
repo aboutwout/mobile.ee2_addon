@@ -48,32 +48,25 @@ class Mobile_ext
     $this->settings = $settings;
     
     $this->site_id = $this->EE->config->item('site_id');
-    
-    $segs = $this->EE->uri->segments;
-    
-    foreach (range(1, 10) as $n)
-    {
-      $this->EE->config->_global_vars['mobile_'.$n] = isset($segs[$n]) ? $segs[$n] : '';
-    }
-    
+        
     $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
     $this->_mobile_forced = ($this->EE->input->cookie('mobile_forced') === 'yes') ? TRUE : FALSE;
+    
+    $this->_is_mobile();
   }
   // END __construct
   
   public function core_template_route($current_uri=NULL)
   {
-
     if (is_null($current_uri) OR ! $this->_mobile_check)
     {
       return;
     }
-    
+
     if ($return = $this->_get_mobile_template($current_uri))
     {
       return $return;
     }
-    
   }
 	
   /**
@@ -101,22 +94,7 @@ class Mobile_ext
       $this->EE->functions->redirect($_SERVER['HTTP_REFERER']);
     }
     
-    if ($this->_mobile_forced)
-    {
-      $this->_is_mobile();
-      $this->_prefix = 'mobile';
-      $this->_mobile_check = TRUE;
-    }
-    else
-    {
-      // Check for mobile and set global vars
-      $this->_is_mobile(FALSE);
-    }
-        
-    $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
-    $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
-    $this->EE->config->_global_vars['mobile:switch_to_mobile:force'] = $this->EE->functions->create_url('?MOBILE_ACT=STM&force=1');
-    
+    $this->_set_global_vars();
   }
   // END sessions_start
 
@@ -421,30 +399,50 @@ class Mobile_ext
     }
   }
   
-  private function _is_mobile($is_on=TRUE)
-  {
-    
+  private function _is_mobile()
+  { 
     $agent = $_SERVER['HTTP_USER_AGENT'];
-    
+        
     $this->EE->load->library('client');
     
     $is_mobile = $this->EE->client->is_mobile($agent);
 
     $this->_prefix = isset($this->settings[$this->EE->client->mobile_client]) ? $this->settings[$this->EE->client->mobile_client] : '';      
-    
-    $this->EE->config->_global_vars['is_mobile'] = $is_mobile;
-    $this->EE->config->_global_vars['is_desktop'] = ! $is_mobile;
-    $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
-    
-    if ($is_on === FALSE)
+
+    $this->_is_mobile = $is_mobile;
+   
+    if ($this->_mobile_forced)
+    {
+      $this->_prefix = 'mobile';
+      $this->_mobile_check = TRUE;
+    }
+    else if ($is_mobile === FALSE)
     {
       $this->_mobile_check = FALSE;
     }
     
-    return $is_mobile;
-    
   }
   // END _is_mobile
+  
+  private function _set_global_vars()
+  {
+    $this->EE->config->_global_vars['is_mobile'] = $this->_is_mobile;
+    $this->EE->config->_global_vars['is_desktop'] = ! $this->_is_mobile;
+    $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
+    
+    $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
+    $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
+    $this->EE->config->_global_vars['mobile:switch_to_mobile:force'] = $this->EE->functions->create_url('?MOBILE_ACT=STM&force=1');
+    
+    $segs = $this->EE->uri->segments;
+    
+    foreach (range(1, 10) as $n)
+    {
+      $this->EE->config->_global_vars['mobile_'.$n] = isset($segs[$n]) ? $segs[$n] : '';
+    }
+    
+    
+  }
   
   function _get_default_settings() {
     $this->EE->load->add_package_path(PATH_THIRD.strtolower(get_class($this)).'/');
