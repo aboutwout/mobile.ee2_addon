@@ -47,6 +47,9 @@ class Mobile_ext
     $this->EE =& get_instance();
     $this->settings = $settings;
     
+    $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
+    $this->EE->load->library('client');
+    
     $this->site_id = $this->EE->config->item('site_id');
         
     $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
@@ -101,9 +104,6 @@ class Mobile_ext
 
   function settings()
   {
-    $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
-    $this->EE->load->library('client');
-    
     $settings = array();
 
     foreach ($this->EE->client->mobile_clients as $mb)
@@ -402,9 +402,7 @@ class Mobile_ext
   private function _is_mobile()
   { 
     $agent = $_SERVER['HTTP_USER_AGENT'];
-        
-    $this->EE->load->library('client');
-    
+            
     $is_mobile = $this->EE->client->is_mobile($agent);
 
     $this->_prefix = isset($this->settings[$this->EE->client->mobile_client]) ? $this->settings[$this->EE->client->mobile_client] : '';      
@@ -445,7 +443,7 @@ class Mobile_ext
   }
   
   function _get_default_settings() {
-    $this->EE->load->add_package_path(PATH_THIRD.strtolower(get_class($this)).'/');
+    $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
     $this->EE->load->library('client');
     $settings = array();
 
