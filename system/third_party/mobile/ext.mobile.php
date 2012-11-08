@@ -49,10 +49,30 @@ class Mobile_ext
     
     $this->site_id = $this->EE->config->item('site_id');
     
-    $this->_mobile_check = ($this->EE->input->cookie(strtolower(__CLASS__).'_on') === 'no') ? FALSE : TRUE;
+    $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
        
   }
   // END __construct
+  
+  // public function core_template_route($current_uri=NULL)
+  // {
+  //   if ( ! $this->_mobile_forced)
+  //   {
+  //     // Check for mobile and set global vars
+  //     $this->_is_mobile();
+  //   }
+  //   
+  //   if (is_null($current_uri) OR ! $this->_mobile_check)
+  //   {
+  //     return;
+  //   }
+  //   
+  //   if ($return = $this->_get_mobile_template($current_uri))
+  //   {
+  //     return $return;
+  //   }
+  //   
+  // }
 	
   /**
   * ...
@@ -75,76 +95,19 @@ class Mobile_ext
         case 'STM':
           $this->_switch_to_mobile();
           break;
-      }      
+      }     
+       
       $this->EE->functions->redirect($_SERVER['HTTP_REFERER']);
     }
+  
     
-    $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
-    $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
-    
-    
-    // Check for mobile and set global vars
-    $this->_is_mobile();
-    
-
-    // Mobile redirect is disabled
-    if ($this->_mobile_check === FALSE) return;
-
-	  $pages = $this->EE->config->config['site_pages'][$this->site_id];
-	  $templates = $pages['templates'];
-	  $uris = $pages['uris'];
-	  
-	  if (is_array($uris))
-	  {
-  	  if ($index = array_search('/'.$this->EE->uri->uri_string, $uris) OR $index = array_search('/'.$this->EE->uri->uri_string.'/', $uris))
-  	  {	      	    
-  	    $query = $this->EE->db
-  	                      ->select('template_groups.group_name, templates.template_name')
-  	                      ->where('templates.template_id', $templates[$index])
-  	                      ->join('template_groups', 'templates.group_id=template_groups.group_id')
-  	                      ->from('templates')
-  	                      ->get();
-
-  	    // No template was found, exit here
-  	    if ($query->num_rows() === 0) return;
-
-  	    $mobile_group_name = $this->_prefix.'__'.$query->row('group_name');
-  	    $mobile_template_name = $query->row('template_name');
-
-        // No mobile template was found, exit here
-        if ( $this->_template_exists($mobile_group_name, $mobile_template_name) === FALSE) return;
-
-        $templates[$index] = $this->_template_id;
-
-        $pages['templates'] = $templates;
-        $this->EE->config->config['site_pages'][$this->site_id] = $pages;
-
-        return;
-  	  }	    
-	  }
-
-	  
-    $template_group = @$this->EE->uri->segments[1];
-    $template_name = @$this->EE->uri->segments[2];
-    
-    if ( $check = $this->_check_template($template_group, $template_name))
-    {
-      list($template_group, $template_name) = $check;
-    }
-            
-    if ($this->_template_exists($this->_prefix.'__'.$template_group, $template_name))
-    {      
-  	  $this->EE->uri->segments[1] = $this->_mobile_template_group;
-  	  $this->EE->uri->segments[2] = $template_name;
-    }
-	  
   }
   // END sessions_start
 
 
   function settings()
   {
-    $this->EE->load->add_package_path(PATH_THIRD.strtolower(BW_MOBILE_NAME).'/');
+    $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
     $this->EE->load->library('client');
     $settings = array();
 
@@ -163,57 +126,229 @@ class Mobile_ext
     return strtolower(str_replace(' ', '_', $str));
   }
   
-  private function _check_template($template_group='', $template_name='')
+  private function _get_mobile_template($uri='')
+  {    
+    $template = $this->_find_template($uri);
+    
+    if ($this->_template_exists($this->_prefix.'__'.$template['template_group'], $template['template']))
+    {
+      return array($this->_prefix.'__'.$template['template_group'], $template['template']);
+    }
+
+  }
+  
+  
+  private function _find_template($uri='')
   {
-    $site_id = $this->site_id;
-    $default_group = $this->_fetch_default_template_group();
-    $template_name = $template_name ? $template_name : 'index';
-    
-    $ors = array();
+		$pages		= $this->EE->config->item('site_pages');
+		$site_id	= $this->EE->config->item('site_id');
+		$entry_id	= FALSE;
+		
+		// If we have pages, we'll look for an entry id
+		if ($pages && isset($pages[$site_id]['uris']))
+		{
+			$match_uri = '/'.trim($uri, '/');	// will result in '/' if uri_string is blank
+			$page_uris = $pages[$site_id]['uris'];
+			
+			$entry_id = array_search($match_uri, $page_uris);
+			
+			if ( ! $entry_id AND $match_uri != '/')
+			{
+				$entry_id = array_search($match_uri.'/', $page_uris);
+			}
+		}
+		
+		// Found an entry - grab related template
+		if ($entry_id)
+		{
+			$qry = $this->EE->db->select('t.template_name, tg.group_name')
+				->from(array('templates t', 'template_groups tg'))
+				->where('t.group_id', 'tg.group_id', FALSE)
+				->where('t.template_id', $pages[$site_id]['templates'][$entry_id])
+				->get();
+			
+			if ($qry->num_rows() > 0)
+			{
+				/* 
+					We do it this way so that we are not messing with 
+					any of the segment variables, which should reflect 
+					the actual URL and not our Pages redirect. We also
+					set a new QSTR variable so that we are not 
+					interfering with other module's besides the Channel 
+					module (which will use the new Pages_QSTR when available).
+				*/
+				$template = $qry->row('template_name');
+				$template_group = $qry->row('group_name');
+				$this->EE->uri->page_query_string = $entry_id;
+			}
+		}
+		
+		if ($parsed = $this->_parse_template_uri())
+		{
+		  list($template_group, $template) = $parsed;
+		}
+		
+		return array(
+		  'template_group' => $template_group,
+		  'template' => $template
+		);
+  }
+  
+  private function _parse_template_uri()
+  {
+		// Does the first segment exist?  No?  Show the default template   
+		if ($this->EE->uri->segment(1) === FALSE)
+		{
+		  $default_group = $this->_fetch_default_template_group();
+      return array($default_group, 'index');
+    }
+    // Is only the pagination showing in the URI?
+    elseif(count($this->EE->uri->segments) == 1 && 
+    		preg_match("#^(P\d+)$#", $this->EE->uri->segment(1), $match))
+    {
+    	$this->EE->uri->query_string = $match['1'];
+		  $default_group = $this->_fetch_default_template_group();
+      return array($default_group, 'index');
+    }
+        
+    // Set the strict urls pref
+    if ($this->EE->config->item('strict_urls') !== FALSE)
+    {
+    	$strict_urls = ($this->EE->config->item('strict_urls') == 'y') ? TRUE : FALSE;
+    }
 
-    if ($template_group)
-    {
-      $ors[] = "(tg.group_name='$template_group' AND t.template_name='$template_name')";
-      $ors[] = "(tg.group_name='$default_group' AND t.template_name='$template_group')";
-    }
-    else
-    {
-      $ors[] = "(tg.group_name='$default_group' AND t.template_name='index')";
-    }
-    
-    $sql = "SELECT tg.group_name AS template_group, t.template_name AS template_name FROM exp_templates t LEFT JOIN exp_template_groups tg ON t.group_id=tg.group_id WHERE tg.site_id='$site_id'";
-    
-    if (count($ors) > 0)
-    {
-      $sql .= " AND (".implode(' OR ', $ors).")";      
-    }
-    
-    $query = $this->EE->db->query($sql);
+		// Load the string helper
+		$this->EE->load->helper('string');
+		
+		// At this point we know that we have at least one segment in the URI, so
+		// let's try to determine what template group/template we should show
+		
+		// Is the first segment the name of a template group?
+		$this->EE->db->select('group_id');
+		$this->EE->db->where('group_name', $this->EE->uri->segment(1));
+		$this->EE->db->where('site_id', $this->EE->config->item('site_id'));
+		$query = $this->EE->db->get('template_groups');
+		
+		// Template group found!
+		if ($query->num_rows() == 1)
+		{
+			// Set the name of our template group
+			$template_group = $this->EE->uri->segment(1);
 
-    if ($query->num_rows() > 0)
-    {
-      return array($query->row('template_group'), $query->row('template_name'));      
-    }
+      // $this->log_item("Template Group Found: ".$template_group);
+			
+			// Set the group_id so we can use it in the next query
+			$group_id = $query->row('group_id');
+		
+			// Does the second segment of the URI exist? If so...
+			if ($this->EE->uri->segment(2) !== FALSE)
+			{
+				// Is the second segment the name of a valid template?
+				$this->EE->db->select('COUNT(*) as count');
+				$this->EE->db->where('group_id', $group_id);
+				$this->EE->db->where('template_name', $this->EE->uri->segment(2));
+				$query = $this->EE->db->get('templates');
+			
+				// We have a template name!
+				if ($query->row('count') == 1)
+				{
+					// Assign the template name
+					$template = $this->EE->uri->segment(2);
+					
+					// Re-assign the query string variable in the Input class so the various tags can show the correct data
+					$this->EE->uri->query_string = ( ! $this->EE->uri->segment(3) AND $this->EE->uri->segment(2) != 'index') ? '' : trim_slashes(substr($this->EE->uri->uri_string, strlen('/'.$this->EE->uri->segment(1).'/'.$this->EE->uri->segment(2))));
+					
+					
+				}
+				else // A valid template was not found
+				{
+					
+					// Set the template to index
+					$template = 'index';
+				   
+					// Re-assign the query string variable in the Input class so the various tags can show the correct data
+					$this->EE->uri->query_string = ( ! $this->EE->uri->segment(3)) ? $this->EE->uri->segment(2) : trim_slashes(substr($this->EE->uri->uri_string, strlen('/'.$this->EE->uri->segment(1))));
+				}
+			}
+			// The second segment of the URL does not exist
+			else
+			{
+				// Set the template as "index"
+				$template = 'index';
+			}
+		}
+		// The first segment in the URL does NOT correlate to a valid template group.  Oh my!
+		else 
+		{
+			// If we are enforcing strict URLs we need to show a 404
+			if ($strict_urls == TRUE)
+			{
+        return FALSE;
+			}
+			
+			// We we are not enforcing strict URLs, so Let's fetch the the name of the default template group
+			$result = $this->EE->db->select('group_name, group_id')
+				->get_where(
+					'template_groups',
+					array(
+						'is_site_default' => 'y',
+						'site_id' => $this->EE->config->item('site_id')
+					)
+				);
 
-    if ($template_group)
-    {
-      $sql_fallback = "SELECT tg.group_name AS template_group, t.template_name AS template_name FROM exp_templates t LEFT JOIN exp_template_groups tg ON t.group_id=tg.group_id WHERE tg.site_id='$site_id' AND (tg.group_name='$template_group' AND t.template_name='index')";
-      
-      $query_fallback = $this->EE->db->query($sql_fallback);
-            
-      if ($query_fallback->num_rows() > 0)
-      {
-        return array($query_fallback->row('template_group'), $query_fallback->row('template_name'));      
-      }
-    }
-    
-    return array($default_group, 'index');
+			// No result?  Bail out...
+			// There's really nothing else to do here.  We don't have a valid
+			// template group in the URL and the admin doesn't have a template
+			// group defined as the site default.
+			if ($result->num_rows() == 0)
+			{
+			  return FALSE;
+			}
+			
+			// Since the first URI segment isn't a template group name,
+			// could it be the name of a template in the default group?
+			$this->EE->db->select('COUNT(*) as count');
+			$this->EE->db->where('group_id', $result->row('group_id'));
+			$this->EE->db->where('template_name', $this->EE->uri->segment(1));
+			$query = $this->EE->db->get('templates');
+
+			// We found a valid template!
+			if ($query->row('count') == 1)
+			{ 
+				// Set the template group name from the prior query result (we
+				// use the default template group name)
+				$template_group	= $result->row('group_name');
+
+				// Set the template name
+				$template = $this->EE->uri->segment(1);
+
+				// Re-assign the query string variable in the Input class so the
+				// various tags can show the correct data
+				if ($this->EE->uri->segment(2))
+				{
+					$this->EE->uri->query_string = trim_slashes(substr(
+						$this->EE->uri->uri_string,
+						strlen('/'.$this->EE->uri->segment(1))
+					));
+				}
+				
+				return array($template_group, $template);
+        
+			}
+			// A valid template was not found. At this point we do not have
+			// either a valid template group or a valid template name in the URL
+			else
+			{
+			  return FALSE;
+			}
+		}
+
+		// Fetch the template!
+    return array($template_group, $template);
   }
 
   private function _template_exists($template_group='', $template_name='')
   { 
-    // $template_group = ($template_group == $this->_prefix.'__') ? $this->_prefix.'__'.$this->_fetch_default_template_group() : $template_group;
-    // $template_name = ! $template_name ? 'index' : $template_name;
         
     if ( ! $template_group) return FALSE;
     
@@ -255,12 +390,12 @@ class Mobile_ext
   
   private function _switch_to_full()
   {
-    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'no', $this->_cookie_timeout);
+    $this->EE->functions->set_cookie('mobile_on', 'no', $this->_cookie_timeout);
   }
   
   private function _switch_to_mobile()
   {
-    $this->EE->functions->set_cookie(strtolower(__CLASS__).'_on', 'yes', $this->_cookie_timeout);
+    $this->EE->functions->set_cookie('mobile_on', 'yes', $this->_cookie_timeout);
   }
   
   private function _is_mobile()
@@ -284,7 +419,7 @@ class Mobile_ext
   // END _is_mobile
   
   function _get_default_settings() {
-    $this->EE->load->add_package_path(PATH_THIRD.strtolower(BW_MOBILE_NAME).'/');
+    $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
     $this->EE->load->library('client');
     $settings = array();
 
@@ -296,6 +431,17 @@ class Mobile_ext
     
     return $settings;  
   }
+  
+  private function _set_global_vars()
+  {
+    $this->EE->config->_global_vars['is_mobile'] = $this->is_mobile;
+    $this->EE->config->_global_vars['is_desktop'] = ! $this->is_mobile;
+    $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
+    
+    $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
+    $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
+    $this->EE->config->_global_vars['mobile:switch_to_mobile:force'] = $this->EE->functions->create_url('?MOBILE_ACT=STM&force=1');
+  }
 
 	// --------------------------------
 	//  Activate Extension
@@ -305,7 +451,8 @@ class Mobile_ext
 
     // hooks array
     $hooks = array(
-      'sessions_start' => 'sessions_start'
+      'sessions_start' => 'sessions_start',
+      // 'core_template_route' => 'core_template_route'
     );
 
     // insert hooks and methods
@@ -330,6 +477,7 @@ class Mobile_ext
 	}
 	// END activate_extension
 	 
+	
 	 
 	// --------------------------------
 	//  Update Extension
