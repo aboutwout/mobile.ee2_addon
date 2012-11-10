@@ -50,12 +50,16 @@ class Mobile_ext
     $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
     $this->EE->load->library('client');
     
+    // You're in the CP, so don't do anything
+    if (defined('REQ') AND REQ == 'CP') return;
+    
     $this->site_id = $this->EE->config->item('site_id');
         
     $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
     $this->_mobile_forced = ($this->EE->input->cookie('mobile_forced') === 'yes') ? TRUE : FALSE;
     
     $this->_is_mobile();
+    $this->_set_global_vars();
   }
   // END __construct
   
@@ -66,22 +70,17 @@ class Mobile_ext
       return;
     }
 
-    if ($return = $this->_get_mobile_template($current_uri))
-    {
-      return $return;
-    }
+    return $this->_get_mobile_template($current_uri);
   }
 	
   /**
   * ...
   */
-  function sessions_start($SESS)
+  function sessions_start()
   {
     // You're in the CP, so don't do anything
     if (defined('REQ') AND REQ == 'CP') return;
-        
-    $this->EE->session = $SESS;
-    
+            
     // If the URL contains 'MOBILE_ACT' execute this code and redirect afterwards
     if (isset($_GET['MOBILE_ACT']) AND in_array($_GET['MOBILE_ACT'], array('STF', 'STM')))
     {
@@ -93,11 +92,10 @@ class Mobile_ext
         case 'STM':
           $this->_switch_to_mobile();
           break;
-      }      
+      }
+      
       $this->EE->functions->redirect($_SERVER['HTTP_REFERER']);
     }
-    
-    $this->_set_global_vars();
   }
   // END sessions_start
 
@@ -129,7 +127,8 @@ class Mobile_ext
     {
       return array($this->_prefix.'__'.$template['template_group'], $template['template']);
     }
-
+    
+    return FALSE;
   }
   
   
@@ -164,14 +163,6 @@ class Mobile_ext
 			
 			if ($qry->num_rows() > 0)
 			{
-				/* 
-					We do it this way so that we are not messing with 
-					any of the segment variables, which should reflect 
-					the actual URL and not our Pages redirect. We also
-					set a new QSTR variable so that we are not 
-					interfering with other module's besides the Channel 
-					module (which will use the new Pages_QSTR when available).
-				*/
 				$template = $qry->row('template_name');
 				$template_group = $qry->row('group_name');
 				$this->EE->uri->page_query_string = $entry_id;
@@ -344,7 +335,6 @@ class Mobile_ext
 
   private function _template_exists($template_group='', $template_name='')
   { 
-        
     if ( ! $template_group) return FALSE;
     
     $query = $this->EE->db
@@ -386,17 +376,11 @@ class Mobile_ext
   private function _switch_to_full()
   {
     $this->EE->functions->set_cookie('mobile_on', 'no', $this->_cookie_timeout);
-    $this->EE->functions->set_cookie('mobile_forced', '', '');
   }
   
   private function _switch_to_mobile()
   {
     $this->EE->functions->set_cookie('mobile_on', 'yes', $this->_cookie_timeout);
-    
-    if ($this->EE->input->get('force') == 1)
-    {
-      $this->EE->functions->set_cookie('mobile_forced', 'yes', $this->_cookie_timeout);
-    }
   }
   
   private function _is_mobile()
@@ -409,12 +393,7 @@ class Mobile_ext
 
     $this->_is_mobile = $is_mobile;
    
-    if ($this->_mobile_forced)
-    {
-      $this->_prefix = 'mobile';
-      $this->_mobile_check = TRUE;
-    }
-    else if ($is_mobile === FALSE)
+    if ($is_mobile === FALSE)
     {
       $this->_mobile_check = FALSE;
     }
@@ -432,19 +411,10 @@ class Mobile_ext
     $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
     $this->EE->config->_global_vars['mobile:switch_to_mobile:force'] = $this->EE->functions->create_url('?MOBILE_ACT=STM&force=1');
     
-    $segs = $this->EE->uri->segments;
-    
-    foreach (range(1, 10) as $n)
-    {
-      $this->EE->config->_global_vars['mobile_'.$n] = isset($segs[$n]) ? $segs[$n] : '';
-    }
-    
-    
   }
   
   function _get_default_settings() {
-    $this->EE->load->add_package_path(PATH_THIRD.'mobile/');
-    $this->EE->load->library('client');
+
     $settings = array();
 
     foreach ($this->EE->client->mobile_clients as $mb)
