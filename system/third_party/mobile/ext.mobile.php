@@ -19,11 +19,11 @@ class Mobile_ext
 {
   public $settings            = array();
 
-  public $name                = BW_MOBILE_NAME;
   public $version             = BW_MOBILE_VERSION;
+  public $name                = BW_MOBILE_NAME;
   public $description         = BW_MOBILE_DESCRIPTION;
-  public $settings_exist      = 'y';
-  public $docs_url            = '';
+  public $docs_url            = BW_MOBILE_DOCS;
+  public $settings_exist      = BW_MOBILE_SETTINGS_EXIST;
 
   private $_template_id = FALSE;		
 
@@ -56,7 +56,6 @@ class Mobile_ext
     $this->site_id = $this->EE->config->item('site_id');
         
     $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
-    $this->_mobile_forced = ($this->EE->input->cookie('mobile_forced') === 'yes') ? TRUE : FALSE;
     
     $this->_is_mobile();
     $this->_set_global_vars();
@@ -408,9 +407,7 @@ class Mobile_ext
     $this->EE->config->_global_vars['mobile_client'] = $this->EE->client->mobile_client;
     
     $this->EE->config->_global_vars['mobile:switch_to_full'] = $this->EE->functions->create_url('?MOBILE_ACT=STF');
-    $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');
-    $this->EE->config->_global_vars['mobile:switch_to_mobile:force'] = $this->EE->functions->create_url('?MOBILE_ACT=STM&force=1');
-    
+    $this->EE->config->_global_vars['mobile:switch_to_mobile'] = $this->EE->functions->create_url('?MOBILE_ACT=STM');    
   }
   
   function _get_default_settings() {
