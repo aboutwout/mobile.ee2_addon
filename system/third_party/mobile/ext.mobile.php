@@ -57,13 +57,16 @@ class Mobile_ext
         
     $this->_mobile_check = ($this->EE->input->cookie('mobile_on') === 'no') ? FALSE : TRUE;
     
-    $this->_is_mobile();
-    $this->_set_global_vars();
+    // $this->_is_mobile();
+    // $this->_set_global_vars();
   }
   // END __construct
   
   public function core_template_route($current_uri=NULL)
   {
+    $this->_is_mobile();
+    $this->_set_global_vars();
+
     if (is_null($current_uri) OR ! $this->_mobile_check)
     {
       return;
@@ -443,7 +446,7 @@ class Mobile_ext
         'class'		=> get_class($this),
         'method'	=> $method,
         'hook'		=> $hook,
-        'priority'	=> 10,
+        'priority'	=> 11,
         'version'	=> $this->version,
         'enabled'	=> 'y',
         'settings'	=> serialize($this->_get_default_settings())
