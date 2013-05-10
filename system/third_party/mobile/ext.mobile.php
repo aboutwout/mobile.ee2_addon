@@ -93,11 +93,14 @@ class Mobile_ext
       $pages = $this->EE->config->config['site_pages'][$this->site_id];
       $templates = $pages['templates'];
       $uris = $pages['uris'];
-       
+
+      // remove any pagination segments in the uri before matching structure/pages template - P2, P3, etc...
+      $uri_string = preg_replace('/\/P\d+/', '', $this->EE->uri->uri_string);
+
       if (is_array($uris))
       {
-      if ($index = array_search('/'.$this->EE->uri->uri_string, $uris) OR $index = array_search('/'.$this->EE->uri->uri_string.'/', $uris))
-      {             
+      if ($index = array_search('/'.$uri_string, $uris) OR $index = array_search('/'.$uri_string.'/', $uris))
+      {      
         $query = $this->EE->db
                           ->select('template_groups.group_name, templates.template_name')
                           ->where('templates.template_id', $templates[$index])
